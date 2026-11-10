@@ -1,0 +1,2 @@
+{"type":"assistant","timestamp":"2026-01-05T09:00:15.000Z","sessionId":"sess-fixture-1","agentId":"sub-1","isSidechain":true,"cwd":"/work/demo-app","message":{"role":"assistant","content":[{"type":"tool_use","id":"tu_s1","name":"Bash","input":{"command":"npx eslint src"}}]}}
+{"type":"user","timestamp":"2026-01-05T09:00:16.000Z","sessionId":"sess-fixture-1","agentId":"sub-1","isSidechain":true,"cwd":"/work/demo-app","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"tu_s1","content":"clean","is_error":false}]}}

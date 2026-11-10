@@ -1,0 +1,6 @@
+{
+  "name": "overfit-gym-sample-project",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node --test" }
+}

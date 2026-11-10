@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Station gallery</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2314161b'/%3E%3Crect x='5' y='10' width='4' height='12' rx='1' fill='%23ffb238'/%3E%3Crect x='23' y='10' width='4' height='12' rx='1' fill='%23ffb238'/%3E%3Crect x='9' y='14.5' width='14' height='3' fill='%23f2e9d8'/%3E%3C/svg%3E" />
+    <meta name="description" content="Overfit Gym pose gallery: one clanker at every station with fake view models. No telemetry." />
+    <script type="importmap">
+      { "imports": { "three": "./vendor/three/three.module.min.js", "three/addons/": "./vendor/three/addons/" } }
+    </script>
+    <style>
+      @font-face { font-family: 'Barlow Condensed'; src: url('./fonts/BarlowCondensed-Bold.woff2') format('woff2'); font-weight: 700; }
+      @font-face { font-family: 'Barlow Condensed'; src: url('./fonts/BarlowCondensed-ExtraBold.woff2') format('woff2'); font-weight: 800; }
+      @font-face { font-family: 'Barlow Condensed'; src: url('./fonts/BarlowCondensed-Black.woff2') format('woff2'); font-weight: 900; }
+      @font-face { font-family: 'JetBrains Mono'; src: url('./fonts/JetBrainsMono-Variable.woff2') format('woff2'); font-weight: 100 800; }
+      :root { color-scheme: dark; --bg: #14161b; --fg: #f2e9d8; --muted: #9aa0aa; --amber: #ffb238; }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); font: 13px/1.35 ui-sans-serif, -apple-system, "Helvetica Neue", sans-serif; overflow: hidden; }
+      canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; cursor: grab; }
+      .badge { position: fixed; top: 12px; left: 12px; padding: 6px 10px; border: 1px solid var(--amber); color: var(--amber); background: rgba(12,13,17,0.85); border-radius: 6px; font: 700 12px ui-monospace, Menlo, monospace; letter-spacing: 0.04em; text-transform: uppercase; }
+      nav { position: fixed; top: 48px; left: 12px; bottom: 12px; width: 210px; overflow: auto; background: rgba(12,13,17,0.78); border: 1px solid #2a2d35; border-radius: 8px; padding: 6px; }
+      nav button { display: block; width: 100%; text-align: left; background: none; border: 0; color: var(--fg); padding: 4px 8px; border-radius: 4px; cursor: pointer; font: inherit; }
+      nav button:hover, nav button[aria-pressed="true"] { background: #2a2d35; }
+      nav small { color: var(--muted); }
+      .tags { position: fixed; inset: 0; pointer-events: none; }
+      .tag { position: absolute; transform: translate(-50%, -100%); padding: 1px 5px; border-radius: 3px; background: rgba(12,13,17,0.75); color: var(--fg); font: 600 10px ui-monospace, Menlo, monospace; white-space: nowrap; }
+      body.clean nav, body.clean .tags { display: none; }
+    </style>
+  </head>
+  <body>
+    <canvas id="gym" aria-label="Pose gallery scene"></canvas>
+    <div class="tags" id="tags" aria-hidden="true"></div>
+    <div class="badge">Pose gallery: no telemetry</div>
+    <nav id="list" aria-label="Stations"></nav>
+    <script type="module" src="./gallery.js"></script>
+  </body>
+</html>

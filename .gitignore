@@ -1,0 +1,22 @@
+# runtime telemetry and local state (never commit raw telemetry)
+data/
+*.jsonl
+!test/fixtures/**/*.jsonl
+.env
+.env.*
+!.env.example
+
+# local tool state (may contain local paths)
+.ledger/
+
+# captures and reference screenshots
+captures/
+*.png
+*.mp4
+!docs/media/*.png
+
+node_modules/
+.DS_Store
+
+# local media; not part of the repo
+web/media/local/

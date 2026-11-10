@@ -1,0 +1,19 @@
+{
+  "numTotalTests": 4,
+  "success": false,
+  "startTime": 1767600000000,
+  "testResults": [
+    {
+      "name": "src/math.test.js",
+      "startTime": 1767600000100,
+      "endTime": 1767600000400,
+      "status": "failed",
+      "assertionResults": [
+        { "ancestorTitles": ["math"], "title": "adds", "fullName": "math adds", "status": "passed", "duration": 3, "failureMessages": [], "numPassingAsserts": 2 },
+        { "ancestorTitles": ["math"], "title": "no expects", "fullName": "math no expects", "status": "passed", "duration": 1, "failureMessages": [], "numPassingAsserts": 0 },
+        { "ancestorTitles": ["math"], "title": "divides", "fullName": "math divides", "status": "failed", "duration": 5, "failureMessages": ["redacted"], "numPassingAsserts": 1 },
+        { "ancestorTitles": ["math"], "title": "later", "fullName": "math later", "status": "pending", "duration": null, "failureMessages": [], "numPassingAsserts": 0 }
+      ]
+    }
+  ]
+}

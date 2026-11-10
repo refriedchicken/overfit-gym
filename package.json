@@ -1,0 +1,42 @@
+{
+  "name": "overfit-gym",
+  "version": "0.1.0",
+  "description": "A 3D gym, shot like a 1980s workout tape, that lampoons how much coding agents write and run tests, driven by local telemetry.",
+  "keywords": [
+    "three.js",
+    "threejs",
+    "webgl",
+    "coding-agents",
+    "testing",
+    "visualization",
+    "telemetry",
+    "claude-code",
+    "codex",
+    "node-test",
+    "humor"
+  ],
+  "homepage": "https://github.com/buddyh/overfit-gym#readme",
+  "bugs": {
+    "url": "https://github.com/buddyh/overfit-gym/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/buddyh/overfit-gym.git"
+  },
+  "license": "MIT",
+  "author": "Overfit Gym contributors",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node server/server.mjs",
+    "test": "node --test \"test/**/*.test.js\"",
+    "fixture": "node scripts/run-fixture.mjs",
+    "watch": "node adapters/transcript-watch.mjs",
+    "verify:capture": "node scripts/verify-capture-frames.mjs",
+    "replay": "node scripts/export-replay.mjs",
+    "export:video": "node scripts/export-video.mjs"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "numTotalTests": 2,
+  "success": true,
+  "startTime": 1767600000000,
+  "testResults": [
+    {
+      "name": "src/slug.test.ts",
+      "startTime": 1767600000100,
+      "endTime": 1767600000300,
+      "status": "passed",
+      "assertionResults": [
+        { "ancestorTitles": ["slug"], "title": "lowercases", "fullName": "slug lowercases", "status": "passed", "duration": 2, "failureMessages": [], "location": { "line": 4, "column": 3 }, "meta": {} },
+        { "ancestorTitles": ["slug"], "title": "trims", "fullName": "slug trims", "status": "passed", "duration": 1, "failureMessages": [], "location": { "line": 9, "column": 3 }, "meta": {} }
+      ]
+    }
+  ]
+}
