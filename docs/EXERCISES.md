@@ -71,7 +71,7 @@ the pun, not a model in the scene.
 | **Git Pull-ups** | `pull` | `git pull`, `git fetch` | cmd | pull-up bar |
 | **Commit Crunches** | `commit` | `git commit` (atomic commits mean many small crunches) | cmd | crunches on a mat with a counter |
 | **Diff Dips** | `diff` | `git diff`, `git show`, `git log -p` | cmd | parallel-bar dips |
-| **Grep Grip Trainer** | `grep` | `rg`, `grep`, `ag`, Grep/Glob tools | cmd, tool | squeezing hand grippers |
+| **Grep Grip Trainer** | `grep` | `rg`, `grep`, `ag`, `find`, `Select-String`, `findstr`, Grep/Glob tools | cmd, tool | squeezing hand grippers |
 | **Type-Check Yoga** | `typecheck` | `tsc`, `mypy`, `pyright`, `cargo check`, `go vet` | cmd | stretch poses on a mat |
 | **Build Bulk** | `build` | `npm run build`, `vite build`, `cargo build`, `go build`, `xcodebuild build`, `swift build` | cmd | protein shaker plus heavy farmer's carry |
 | **CI Spin Class** | `ci` | `gh run watch`, `gh pr checks`, `gh run view`; polling CI | cmd | spin bike facing a CI status board |
@@ -83,8 +83,24 @@ the pun, not a model in the scene.
 | **Rollback Rowing** | `revert` | `git revert`, `git reset`, `git restore`, `git checkout --` | cmd | rowing machine: pulling backwards |
 | **Docker Box Jumps** | `docker` | `docker build`, `docker run`, `docker compose` | cmd | box jumps onto a shipping-container box |
 | **Edit Station** | `edit` | Edit/Write/apply_patch on production files | edit | typing on a laptop strapped to a dumbbell rack |
-| **Reading Rack** | `read` | Read tool, `cat`, `sed -n`, `head` | tool, cmd | reading a fitness magazine titled after the file type |
+| **Reading Rack** | `read` | Read tool, Skill tool, `cat`, `sed -n`, `head`, `Get-Content`; Codex `view_image` | tool, cmd | reading a fitness magazine titled after the file type |
+| **Mental Reps** | `think` | a thinking block (Claude) or a reasoning item (Codex). Kept off the activity feed: it precedes nearly every step | tool | eyes closed, visualizing the lift |
+| **Front Desk Phone** | `connector` | an MCP tool call to a connector (mail, chat, issue trackers, ...). Host plumbing (`ccd_*`, terminal, `node_repl`) is skipped. The connector's name is never sent | tool | on the phone at the front desk |
+| **Bike + TV** | `browse` | browser automation (MCP servers named browser, chrome, playwright, puppeteer), WebFetch, WebSearch; Codex `web__*` and `web_search_call` | tool | stationary bike facing a TV |
+| **Workout Clipboard** | `plan` | TodoWrite, task lists, plan mode; Codex `update_plan` | tool | writing on a clipboard |
+| **Coach's Whistle** | `coach` | a message a person typed, or an interrupt. Injected context, subagent prompts and Codex reviewer history are excluded. The text is never sent | tool | looks up at the whistle |
+| **Sauna** | `wait` | the agent asked the person a question (AskUserQuestion; Codex `request_user_input`) | tool | sweating it out, waiting on the coach |
+| **Dropped Weight** | `fumble` | a failed tool call that has no beat of its own (a failed edit, read or connector call) | tool | the weight hits the floor |
+| **Protein Shake** | `refuel` | context compaction (Claude `compact_boundary`, Codex `compacted`) | tool | chugging a shaker |
+| **Spotter Huddle** | `huddle` | messaging a subagent (SendMessage; Codex `send_message`, `followup_task`) | tool | huddled with the spotters |
 | **Locker Room** | `idle` | no activity | derived | sitting on the bench, sipping coolant |
+
+The transcript-tool beats above have no 3D equipment yet: like the other non-test activities they show at
+the juice bar, with the activity named on the agent's chip.
+
+On Windows the classifier also reads PowerShell: `pwsh -Command` wrappers, the `&` call operator and
+`$x = <command>` assignments are stripped, and a project's own test script (`run-tests.ps1`,
+`./test.sh`, `Invoke-Pester`) counts as a test run.
 
 ## Ideas parked (not detectable yet, or not honest yet)
 
@@ -94,8 +110,7 @@ the pun, not a model in the scene.
 | Fuzzing HIIT (random intervals) | cmd pattern for `cargo fuzz`, atheris, AFL |
 | Mutation-testing muscle confusion | cmd pattern for stryker, mutmut, cargo-mutants |
 | Snapshot mirror selfies (`-u`, `--update-snapshots`) | cmd pattern; mirror wall prop |
-| Context-refuel protein shake (compaction) | transcript compaction markers |
-| Sauna (waiting on human approval) | permission-request events (hooks only) |
+| Sauna for permission prompts (the agent's own questions are now `wait`) | permission-request events (hooks only) |
 | Rest timer (rate limited, 429) | parse API errors from transcripts |
 | Skipping leg day (no e2e tests in a repo) | repo-level test inventory |
 | Battle ropes (`tail -f` logs) | cmd pattern; long-running commands |

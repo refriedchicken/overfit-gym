@@ -26,6 +26,16 @@ export const ACTIVITY_LABELS = Object.freeze({
   read: 'Reading Rack',
   edit: 'Edit Station',
   'edit-test': 'Test-Writing Treadmill',
+  // Transcript tool beats, not shell commands (adapters/transcript-watch.mjs).
+  think: 'Mental Reps',
+  connector: 'Front Desk Phone',
+  browse: 'Bike + TV',
+  plan: 'Workout Clipboard',
+  coach: "Coach's Whistle",
+  wait: 'Sauna',
+  fumble: 'Dropped Weight',
+  refuel: 'Protein Shake',
+  huddle: 'Spotter Huddle',
 });
 
 export const ACTIVITY_IDS = Object.freeze(Object.keys(ACTIVITY_LABELS).filter((k) => k !== 'test'));
@@ -52,6 +62,9 @@ const TEST_RUNNERS = [
   ['dotnet test', /^dotnet\s+test\b/],
   ['gradle test', /^(?:\.\/)?gradlew?\s+.*\btest\b/],
   ['mvn test', /^mvn\b.*\b(?:test|verify)\b/],
+  ['pester', /^invoke-pester\b/i],
+  // A project's own test script: run-tests.ps1, ./test.sh, scripts/run_tests.sh, test-unit.ps1.
+  ['test script', /^(?:(?:bash|sh|zsh|pwsh|powershell(?:\.exe)?)\s+(?:-\w+\s+)*)?['"]?(?:[\w.:~\\/-]*[\\/])?(?:run[-_]?)?(?:all[-_]?)?tests?(?:[-_][\w-]+)?\.(?:ps1|sh|cmd|bat)\b/i],
 ];
 
 // Activities, in priority order (first match wins within a segment).
@@ -73,8 +86,8 @@ const ACTIVITY_PATTERNS = [
   ['diff', [/^git\s+(?:diff|show)\b/, /^git\s+log\b.*\s-p\b/]],
   ['install', [new RegExp(`^${PM}\\s+(?:install|i|add|ci)\\b`), /^(?:pip3?|uv\s+pip)\s+install\b/, /^uv\s+(?:add|sync)\b/, /^brew\s+install\b/, /^cargo\s+add\b/, /^go\s+get\b/, /^pod\s+install\b/]],
   ['docker', [/^docker(?:-compose|\s+compose)?\s+(?:build|run|up|compose)\b/]],
-  ['grep', [/^(?:rg|grep|egrep|ag|ack)\b/, /^git\s+grep\b/]],
-  ['read', [/^(?:cat|head|tail|less|bat)\b/, /^sed\s+-n\b/]],
+  ['grep', [/^(?:rg|grep|egrep|ag|ack)\b/, /^git\s+grep\b/, /^(?:select-string|sls|findstr)\b/i, /^(?:find|fd)\s/]],
+  ['read', [/^(?:cat|head|tail|less|bat)\b/, /^sed\s+-n\b/, /^(?:get-content|gc|type)\b/i]],
 ];
 
 const PRIORITY = ['test', ...ACTIVITY_PATTERNS.map(([id]) => id)];
@@ -123,6 +136,10 @@ function segments(command) {
         s = s.replace(/^[A-Za-z_][A-Za-z0-9_]*=("[^"]*"|'[^']*'|\S*)\s+/, '');
         s = s.replace(/^(?:npx|pnpx|bunx|pnpm\s+exec|env|time|command|exec|nice|timeout\s+\S+|gtimeout\s+\S+)\s+/, '');
         s = s.replace(/^(?:bash|sh|zsh)\s+-l?c\s+["']?/, '');
+        // PowerShell: `pwsh -NoProfile -Command "..."`, the `&` call operator, `$x = <command>`.
+        s = s.replace(/^(?:pwsh|powershell)(?:\.exe)?(?:\s+-(?:NoProfile|NoLogo|NonInteractive|ExecutionPolicy\s+\S+))*\s+-(?:Command|c)\s+["']?/i, '');
+        s = s.replace(/^&\s+/, '');
+        s = s.replace(/^\$[A-Za-z_][\w:]*\s*=\s*/, '');
         if (s === before) break;
       }
       return s;

@@ -35,6 +35,13 @@ const T = {
   diff: ['Same diff. Looked anyway.'],
   lint: ['The linter remains unimpressed.'],
   typecheck: ['Breathe in. Narrow the type.'],
+  think: ['Mental rep {n}.', 'Visualizing the lift. Again.', 'Thinking. {n} sets today.'],
+  connector: ['Front desk, call {n}.', 'Hold on, taking this call.'],
+  browse: ['Watching TV on the bike.', 'Cardio. Technically.'],
+  coach: ['Yes, coach.', 'Coach is watching.', 'Whistle. Eyes up.'],
+  wait: ['Sauna. Waiting on the coach.', 'Your move, coach.'],
+  fumble: ['Dropped it. {n} today.', 'Clang.', "That's {n}. Re-rack it."],
+  refuel: ['Protein shake. Where were we?', 'Context refuelled. Memory: hazy.'],
   writing: ['More tests. While running.'],
   writeTests: ['{tests} test lines. {prod} of code.', "Another test. It's a three-line function.", 'The code did not ask for this.', '{ratio} to one. Tests to code.'],
   writeTestsNoProd: ['Tests for code nobody changed.', '{tests} test lines. Zero code.'],
@@ -144,6 +151,14 @@ export function captionCandidate(state, ev, now = ev.ts) {
     if ((id === 'push' || id === 'commit') && n % 5 === 0) return { kind: id, text: fill(pick(T[id]), { n }) };
     if ((id === 'diff' || id === 'lint') && n >= 3) return { kind: id, text: fill(pick(T[id]), { n }) };
     if (id === 'typecheck' && n === 1) return { kind: id, text: pick(T.typecheck) };
+    // The rest of the day. Frequent beats only speak on round numbers.
+    if (id === 'think' && n % 40 === 0) return { kind: id, text: fill(pick(T.think), { n }) };
+    if (id === 'connector' && n % 10 === 0) return { kind: id, text: fill(pick(T.connector), { n }) };
+    if (id === 'browse' && n % 15 === 1) return { kind: id, text: pick(T.browse) };
+    if (id === 'coach' && n % 5 === 1) return { kind: id, text: pick(T.coach) };
+    if (id === 'wait') return { kind: id, text: pick(T.wait) };
+    if (id === 'fumble' && n >= 3 && n % 3 === 0) return { kind: id, text: fill(pick(T.fumble), { n }) };
+    if (id === 'refuel') return { kind: id, text: pick(T.refuel) };
   }
   if (ev.kind === 'agent.spawn') return { kind: 'spawn', text: fill(pick(T.spawn), { label, children: agent.children.length }) };
   if (ev.kind === 'diff.snapshot') {

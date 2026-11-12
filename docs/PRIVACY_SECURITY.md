@@ -64,8 +64,14 @@ useful:
 If a Claude Code record carries a numeric `costUSD` field, that cost and the record's token counts are
 sent as a `usage` event marked `reported`. Nothing is priced or estimated from tokens.
 
+Beyond tool calls, the watcher notices thinking, connector and browser calls, plans, questions to the
+person, messages a person typed, failed tool calls, subagent messages and context compaction. Each
+becomes nothing more than an activity id (`think`, `connector`, `browse`, `plan`, `wait`, `coach`,
+`fumble`, `huddle`, `refuel`) with a timestamp. The tool name, connector name, prompt text and thinking
+text are never sent.
+
 Prompts, command text, file paths, tool output and assistant messages are never sent. The tests check
-this against fixture transcripts. File offsets are kept in `data/watch-state.json` (gitignored).
+this against fixture transcripts (`test/transcript-watch.test.js`, `test/whole-day.test.js`). File offsets are kept in `data/watch-state.json` (gitignored).
 
 The transcript formats are not documented interfaces. If a CLI changes its format, the watcher can
 miss or misread beats; it cannot start sending fields it does not explicitly extract.

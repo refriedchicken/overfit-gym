@@ -31,8 +31,93 @@ const lineCount = (s) => (typeof s === 'string' && s.length ? s.split('\n').leng
 
 function relTo(cwd, p) {
   if (typeof p !== 'string') return '';
-  if (cwd && p.startsWith(cwd + '/')) return p.slice(cwd.length + 1);
-  return p.split('/').slice(-3).join('/'); // keep only the tail for classification
+  // Windows paths use backslashes and a drive letter in either case.
+  const f = p.replace(/\\/g, '/');
+  const c = typeof cwd === 'string' ? cwd.replace(/\\/g, '/').replace(/\/+$/, '') : '';
+  if (c && f.toLowerCase().startsWith(c.toLowerCase() + '/')) return f.slice(c.length + 1);
+  return f.split('/').slice(-3).join('/'); // keep only the tail for classification
+}
+
+// ---------- the rest of the day: non-test tools mapped to activity ids ----------
+// Only the activity id leaves this file: never a tool name, connector name or argument.
+
+/** MCP servers that are the host app's own plumbing, not work. */
+const MCP_PLUMBING = /^(?:ccd_\w+|terminal|visualize|mcp-registry|node_repl)$/;
+const MCP_BROWSER = /browser|chrome|playwright|puppeteer/i;
+
+const CLAUDE_TOOL_ACTIVITY = {
+  WebFetch: 'browse',
+  WebSearch: 'browse',
+  TodoWrite: 'plan',
+  TaskCreate: 'plan',
+  TaskUpdate: 'plan',
+  EnterPlanMode: 'plan',
+  ExitPlanMode: 'plan',
+  AskUserQuestion: 'wait',
+  SendMessage: 'huddle',
+  Skill: 'read',
+};
+
+const CODEX_TOOL_ACTIVITY = {
+  request_user_input: 'wait',
+  request_user_input_async: 'wait',
+  send_message: 'huddle',
+  followup_task: 'huddle',
+  update_plan: 'plan',
+  web_search: 'browse',
+  view_image: 'read',
+};
+
+/** Activity for an MCP tool name ("mcp__<server>__<tool>"), or null for plumbing. */
+function mcpActivity(name) {
+  const [, server = '', tool = ''] = name.split('__');
+  if (server === 'ccd_turn' && tool === 'update_plan') return 'plan';
+  if (MCP_PLUMBING.test(server)) return null;
+  return MCP_BROWSER.test(server) ? 'browse' : 'connector';
+}
+
+/** Activity id for a Claude Code tool other than shell, edits, reads and searches. */
+function claudeToolActivity(name) {
+  if (typeof name !== 'string') return null;
+  if (name.startsWith('mcp__')) return mcpActivity(name);
+  return CLAUDE_TOOL_ACTIVITY[name] ?? null;
+}
+
+/**
+ * Activity ids for the tools a Codex `exec`/`js` program calls (`tools.<name>(`),
+ * in order. Shell commands and patches are handled by extractCodexCalls.
+ */
+export function extractCodexToolUses(src) {
+  const out = [];
+  if (typeof src !== 'string') return out;
+  for (const m of src.matchAll(/\btools\.([A-Za-z_]\w*)\s*\(/g)) {
+    const name = m[1];
+    let act = null;
+    if (name.startsWith('mcp__')) act = mcpActivity(name);
+    else if (name.startsWith('web__')) act = 'browse';
+    else act = CODEX_TOOL_ACTIVITY[name] ?? null;
+    if (act) out.push(act);
+  }
+  return out;
+}
+
+/** Text of a message's content (string, or text blocks); '' when it carries tool results. */
+function messageText(content) {
+  if (typeof content === 'string') return content;
+  if (!Array.isArray(content) || content.some((c) => c?.type === 'tool_result')) return '';
+  return content.map((c) => (typeof c?.text === 'string' ? c.text : '')).join('\n');
+}
+
+/** Did a person type this? Hosts inject context as tagged blocks or instruction files. */
+function isHumanText(text, source) {
+  const t = text.trim();
+  if (!t) return false;
+  if (t.startsWith('[Request interrupted')) return true;
+  if (source === 'codex') {
+    if (t.startsWith('<turn_aborted>')) return true;
+    if (t.startsWith('# AGENTS.md') || /^The following is the Codex agent history\b/.test(t)) return false;
+  }
+  return !t.startsWith('<');
 }
 
 /** Count +/- lines per file in an apply_patch body. */
@@ -167,6 +252,14 @@ export function createSessionParser({ source, fileKey, projectLabels = true, mod
     return { v: 1, id: `${agent}:${key}`, ts, seq: seq++, source: `${source}-transcript`, synthetic: false, agent, ...fields };
   }
 
+  /** A one-off activity beat for this session's agent (thinking, a connector call, a prompt, ...). */
+  function beat(ts, key, activity, out, status) {
+    ensureAgent(selfAgent, ts, out);
+    const ev = base(selfAgent, ts, key, { kind: 'activity', data: { activity, basis: 'transcript-tool' } });
+    if (status) ev.status = status;
+    out.push(ev);
+  }
+
   function edit(ts, files, out) {
     const agent = selfAgent;
     // Tool inputs are not guaranteed: an edit with no path (or a notebook edit) is skipped.
@@ -268,14 +361,25 @@ export function createSessionParser({ source, fileKey, projectLabels = true, mod
       if (Object.keys(tokens).length) usage.tokens = tokens;
       out.push(base(selfAgent, ts, `${hashHex(String(o.uuid ?? o.requestId))}:usage`, { kind: 'usage', usage }));
     }
+    const lineKey = hashHex(String(o.uuid ?? ts));
+    if (o.type === 'system' && o.subtype === 'compact_boundary') beat(ts, `${lineKey}:refuel`, 'refuel', out);
+    // A person typed something (or interrupted). Subagent prompts come from the parent, not a person.
+    if (o.type === 'user' && !o.isMeta && !o.isSidechain && !o.isCompactSummary && isHumanText(messageText(o.message?.content), 'claude')) {
+      beat(ts, `${lineKey}:coach`, 'coach', out);
+    }
     const content = o.message?.content;
     if (!Array.isArray(content)) return;
     if (o.type === 'assistant') {
-      for (const it of content) {
+      for (const [i, it] of content.entries()) {
+        if (it?.type === 'thinking' || it?.type === 'redacted_thinking') {
+          beat(ts, `${lineKey}:think:${i}`, 'think', out);
+          continue;
+        }
         if (it?.type !== 'tool_use') continue;
         const input = it.input ?? {};
         switch (it.name) {
           case 'Bash':
+          case 'PowerShell':
             startCall(it.id, [input.command], ts, out);
             break;
           case 'Edit':
@@ -300,13 +404,21 @@ export function createSessionParser({ source, fileKey, projectLabels = true, mod
             ensureAgent(selfAgent, ts, out);
             out.push(base(selfAgent, ts, `${hashHex(String(it.id))}:grep`, { kind: 'activity', data: { activity: 'grep', basis: 'transcript-tool' } }));
             break;
-          default:
+          default: {
+            const a = claudeToolActivity(it.name);
+            if (a) beat(ts, `${hashHex(String(it.id))}:${a}`, a, out);
             break;
+          }
         }
       }
     } else if (o.type === 'user') {
       for (const it of content) {
-        if (it?.type !== 'tool_result' || !pending.has(it.tool_use_id)) continue;
+        if (it?.type !== 'tool_result') continue;
+        if (!pending.has(it.tool_use_id)) {
+          // A failed call with no beat of its own to mark: the robot drops the weight.
+          if (it.is_error === true) beat(ts, `${hashHex(String(it.tool_use_id))}:fumble`, 'fumble', out, 'fail');
+          continue;
+        }
         const tr = o.toolUseResult && typeof o.toolUseResult === 'object' ? o.toolUseResult : {};
         const text = [tr.stdout, tr.stderr].filter((x) => typeof x === 'string').join('\n') || flattenOutput(it.content).text;
         endCall(it.tool_use_id, { text, isError: it.is_error === true, interrupted: tr.interrupted === true }, ts, out);
@@ -328,21 +440,42 @@ export function createSessionParser({ source, fileKey, projectLabels = true, mod
     if (o.type === 'turn_context' && p.cwd) cwd = p.cwd;
     if (o.type === 'turn_context' && typeof p.model === 'string') noteModel(p.model, ts, out);
     if (!selfAgent) selfAgent = agentFor(sessionId ?? fileKey);
+    if (o.type === 'compacted') {
+      beat(ts, `${hashHex(String(o.timestamp))}:refuel`, 'refuel', out);
+      return;
+    }
     if (o.type !== 'response_item') return;
+    const key = (suffix) => `${hashHex(String(p.id ?? p.call_id ?? `${o.timestamp}|${JSON.stringify(p).length}`))}:${suffix}`;
+    if (p.type === 'reasoning') return beat(ts, key('think'), 'think', out);
+    if (p.type === 'web_search_call') return beat(ts, key('browse'), 'browse', out);
+    if (p.type === 'message' && p.role === 'user') {
+      if (isHumanText(messageText(p.content), 'codex')) beat(ts, key('coach'), 'coach', out);
+      return;
+    }
     if (p.type === 'custom_tool_call' || p.type === 'function_call' || p.type === 'local_shell_call') {
       let commands = [];
       let patches = [];
+      let uses = [];
       if (p.name === 'apply_patch' && typeof p.input === 'string') patches = [p.input];
-      else if (typeof p.input === 'string') ({ commands, patches } = extractCodexCalls(p.input));
-      else if (typeof p.arguments === 'string') {
+      else if (typeof p.input === 'string') {
+        ({ commands, patches } = extractCodexCalls(p.input));
+        uses = extractCodexToolUses(p.input);
+      } else if (typeof p.arguments === 'string') {
         try {
           const a = JSON.parse(p.arguments);
           const c = a.cmd ?? a.command;
           if (c) commands = [Array.isArray(c) ? c.join(' ') : String(c)];
+          else if (typeof a.code === 'string') {
+            // The `js` tool: a program that calls exec_command, apply_patch and connectors.
+            ({ commands, patches } = extractCodexCalls(a.code));
+            uses = extractCodexToolUses(a.code);
+          }
         } catch {
           /* not JSON */
         }
+        if (CODEX_TOOL_ACTIVITY[p.name]) uses.push(CODEX_TOOL_ACTIVITY[p.name]);
       } else if (p.action?.command) commands = [[].concat(p.action.command).join(' ')];
+      uses.forEach((a, i) => beat(ts, key(`${a}:${i}`), a, out));
       for (const patch of patches) edit(ts, parsePatch(patch), out);
       if (commands.length) startCall(p.call_id ?? p.id, commands.map((c) => c.replace(/^(?:bash|zsh|sh)\s+-l?c\s+/, '')), ts, out);
       return;

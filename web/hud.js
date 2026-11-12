@@ -39,6 +39,15 @@ export const ACTIVITY_TEXT = {
   read: 'reading rack',
   edit: 'production code',
   'write-tests': 'writing tests',
+  think: 'mental reps',
+  connector: 'front desk phone',
+  browse: 'bike + TV',
+  plan: 'workout clipboard',
+  coach: "coach's whistle",
+  wait: 'sauna (waiting on you)',
+  fumble: 'dropped it',
+  refuel: 'protein shake',
+  huddle: 'spotter huddle',
 };
 
 function fmtNum(n) {
@@ -216,7 +225,13 @@ function feedLine(ev, state) {
 export function renderFeed(state) {
   const el = $('feed');
   // Transcript edit snapshots duplicate the "editing" line right next to them.
-  const items = state.feed.filter((ev) => ev.kind !== 'usage').filter((ev) => !(ev.kind === 'diff.snapshot' && ev.data?.basis === 'transcript-edits')).slice(-40).reverse();
+  // Thinking happens before nearly every step; on the feed it would drown everything else.
+  const items = state.feed
+    .filter((ev) => ev.kind !== 'usage')
+    .filter((ev) => !(ev.kind === 'diff.snapshot' && ev.data?.basis === 'transcript-edits'))
+    .filter((ev) => !(ev.kind === 'activity' && ev.data?.activity === 'think'))
+    .slice(-40)
+    .reverse();
   const html = items
     .map((ev) => {
       const f = feedLine(ev, state);
